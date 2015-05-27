@@ -1,4 +1,5 @@
 import numpy as np
+from math import sqrt
 
 class model:
 
@@ -9,6 +10,7 @@ class model:
 		self.phi = phi
 		self.pi = pi
 		self.C = C
+		self.Time = 0.0
 		
 	def set_model_temperature(self,Temperature):
 		self.epsilon = self.feamale_mortality_rate(Temperature) 
@@ -16,8 +18,18 @@ class model:
 		self.pi = self.aquatic_mortality_rate(Temperature)
 		self.w = self.aquatic_transition_rate(Temperature)
 		
+	def return_model_list(self,Temperature):
+		model = {'k' : self.k, 'epsilon' : 0, 'phi' : 0, 'pi' : 0, 'w' : 0, 'R' : 0}
+		model['epsilon'] = self.feamale_mortality_rate(Temperature)
+		model['phi'] = self.feamale_oviposition_rate(Temperature)
+		model['pi'] = self.aquatic_mortality_rate(Temperature)
+		model['w'] = self.aquatic_transition_rate(Temperature)
+		model['R'] = model['k']*model['w']/(model['pi'] + model['w'])*(model['phi']/model['epsilon'])
+		return model
+		
 	def set_model_calendar(self,FisicalTime):
 		self.set_model_temperature(self.calendar_temperature(FisicalTime))
+		self.Time = FisicalTime
 
 	def calendar_temperature(self,FisicalTime):
 		UnitsPerMonth = 30.0
@@ -84,3 +96,47 @@ class model:
 		R=self.k*self.w/(self.pi + self.w)*(self.phi/self.epsilon)
 		return R
 
+
+	def m0_qs(self):
+		m =((self.k*self.w)/self.epsilon)*(self.R()-1.0)/self.R()
+		return m
+
+	def p0_qs(self):
+		p = (self.R()-1.0)/self.R()
+		return p
+		
+	def p1_qs_h(self,Dm0_qs,Dp0_qs):
+		A = (self.phi*self.k*self.w)/(self.epsilon*self.C)
+		B = self.phi*(self.m0_qs()/self.C - self.k*self.w/self.epsilon - Dm0_qs/(self.C*self.epsilon)) - self.p0_qs()*self.k*self.w/self.epsilon + (self.phi + self.w)
+		C = (self.phi + self.p0_qs())*Dm0_qs/self.epsilon + Dp0_qs
+		D = B*B - 4.0*A*C
+		if(D>=0):
+			p1 = (-B + sqrt(D))/(2.0*A)
+		else:
+			p1 = (-B - sqrt(-D))/(2.0*A)
+		return p1
+		
+	def Dm0_qs(self,FisicalTime):
+		T = 28.0
+		modB = self.return_model_list(self.calendar_temperature(FisicalTime - T))
+		modF = self.return_model_list(self.calendar_temperature(FisicalTime))
+		MF = ((modF['k']*modF['w'])/modF['epsilon'])*(modF['R']-1.0)/modF['R']
+		MB = ((modB['k']*modB['w'])/modB['epsilon'])*(modB['R']-1.0)/modB['R']
+		DM = (MF - MB)/T
+		return DM
+		
+	def Dp0_qs(self,FisicalTime):
+		T= 28.0
+		modB = self.return_model_list(self.calendar_temperature(FisicalTime - T))
+		modF = self.return_model_list(self.calendar_temperature(FisicalTime))
+		MF = (modF['R']-1.0)/modF['R']
+		MB = (modB['R']-1.0)/modB['R']
+		DP = (MF - MB)/T
+		return DP
+		
+	def p1_qs(self):
+		return self.p1_qs_h(self.Dm0_qs(self.Time),self.Dp0_qs(self.Time))
+		
+	def m1_qs(self):
+		m1 = self.p1_qs() - self.Dm0_qs(self.Time)/self.epsilon
+		return m1
