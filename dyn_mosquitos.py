@@ -48,10 +48,7 @@ data = dpl.data("DATOS")
 mod.set_monthly_temperature(data.temp_med[region][1:])
 modh.set_monthly_temperature(data.temp_max[region][1:])
 modl.set_monthly_temperature(data.temp_min[region][1:])
-
-print mod.MonthlyTemp
-print modh.MonthlyTemp
-print modl.MonthlyTemp
+print "region %s" % data.temp_min[region][0] 
 
 
 for i in range(1,int(T)):
@@ -77,7 +74,7 @@ plt.plot(m,'y--', cases,'g--',ml,'b--',mh,'r--')
 #plt.plot(m_cum,'r--', cum_cases/200.0,'g--')
 #plt.axis([100, T, 0, 3])	
 ###############################################################
-region = 4
+region = 7 #4
 mod = mos.model(k,w,epsilon,phi,pi,C)
 modh = mos.model(k,w,epsilon,phi,pi,C)
 modl = mos.model(k,w,epsilon,phi,pi,C)
@@ -85,10 +82,8 @@ data = dpl.data("DATOS")
 mod.set_monthly_temperature(data.temp_med[region][1:])
 modh.set_monthly_temperature(data.temp_max[region][1:])
 modl.set_monthly_temperature(data.temp_min[region][1:])
+print "region %s" % data.temp_min[region][0] 
 
-print mod.MonthlyTemp
-print modh.MonthlyTemp
-print modl.MonthlyTemp
 
 for i in range(1,int(T)):
 	mod.set_model_calendar(i*dt)
@@ -110,10 +105,10 @@ for i in range(1,int(T)):
 
 plt.subplot(2,2,2)
 plt.plot(m,'y--', cases,'g--',ml,'b--',mh,'r--')
-
+#plt.plot(cum_cases,'g--',m_cum,'b--')
 ################################################################
 ###############################################################
-region = 5
+region = 26 #5
 mod = mos.model(k,w,epsilon,phi,pi,C)
 modh = mos.model(k,w,epsilon,phi,pi,C)
 modl = mos.model(k,w,epsilon,phi,pi,C)
@@ -121,10 +116,7 @@ data = dpl.data("DATOS")
 mod.set_monthly_temperature(data.temp_med[region][1:])
 modh.set_monthly_temperature(data.temp_max[region][1:])
 modl.set_monthly_temperature(data.temp_min[region][1:])
-
-print mod.MonthlyTemp
-print modh.MonthlyTemp
-print modl.MonthlyTemp
+print "region %s" % data.temp_min[region][0] 
 
 
 for i in range(1,int(T)):
@@ -147,10 +139,10 @@ for i in range(1,int(T)):
 
 plt.subplot(2,2,3)
 plt.plot(m,'y--', cases,'g--',ml,'b--',mh,'r--')
-
+#plt.plot(cum_cases,'g--',m_cum,'b--')
 ################################################################
 ###############################################################
-region = 6
+region = 29 #6
 mod = mos.model(k,w,epsilon,phi,pi,C)
 modh = mos.model(k,w,epsilon,phi,pi,C)
 modl = mos.model(k,w,epsilon,phi,pi,C)
@@ -158,10 +150,7 @@ data = dpl.data("DATOS")
 mod.set_monthly_temperature(data.temp_med[region][1:])
 modh.set_monthly_temperature(data.temp_max[region][1:])
 modl.set_monthly_temperature(data.temp_min[region][1:])
-
-print mod.MonthlyTemp
-print modh.MonthlyTemp
-print modl.MonthlyTemp
+print "region %s" % data.temp_min[region][0] 
 
 
 for i in range(1,int(T)):
@@ -184,7 +173,7 @@ for i in range(1,int(T)):
 
 plt.subplot(2,2,4)
 plt.plot(m,'y--', cases,'g--',ml,'b--',mh,'r--')
-
+#plt.plot(cum_cases,'g--',m_cum,'b--')
 ################################################################
 
 plt.show()
