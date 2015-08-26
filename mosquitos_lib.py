@@ -11,6 +11,7 @@ class model:
 		self.pi = pi
 		self.C = C
 		self.Time = 0.0
+		self.MonthlyTemp = np.zeros(12)
 		
 	def set_model_temperature(self,Temperature):
 		self.epsilon = self.feamale_mortality_rate(Temperature) 
@@ -32,27 +33,37 @@ class model:
 		self.Time = FisicalTime
 
 	def calendar_temperature(self,FisicalTime):
-		UnitsPerMonth = 30.0
+		UnitsPerMonth = 30.91
 		month = int(FisicalTime/UnitsPerMonth)
-		day = FisicalTime - month*30.0
+		day = FisicalTime - month*30.91
 		month = (month-(month/12)*12)
-		MonthlyTemp = np.zeros(12)
-		MonthlyTemp[0]=13.9
-		MonthlyTemp[1]=15.1
-		MonthlyTemp[2]=17.1
-		MonthlyTemp[3]=19.0
-		MonthlyTemp[4]=19.8
-		MonthlyTemp[5]=19.4
-		MonthlyTemp[6]=18.4
-		MonthlyTemp[7]=18.4
-		MonthlyTemp[8]=18.2
-		MonthlyTemp[9]=17.3
-		MonthlyTemp[10]=15.8
-		MonthlyTemp[11]=14.5
+		prevMonth = (month -1)
 		nextMonth= (month + 1) - ((month + 1)/12)*12
-		Temperature = MonthlyTemp[month] + day*(MonthlyTemp[nextMonth] - MonthlyTemp[month])/30.0
+		if(prevMonth == -1):
+			prevMonth = 11
+		if(day < 15):
+			Temperature = self.MonthlyTemp[prevMonth] + (day + 15.45)*(self.MonthlyTemp[month] - self.MonthlyTemp[prevMonth])/30.91
+		else:
+			Temperature = self.MonthlyTemp[month] + (day -15.45)*(self.MonthlyTemp[nextMonth] - self.MonthlyTemp[month])/30.91
 		return Temperature
 
+	def set_monthly_temperature(self,temperature_array):
+		for i in range(0,12):
+			self.MonthlyTemp[i] = float(temperature_array[i])
+			#self.MonthlyTemp[i] = 19.5
+		#self.MonthlyTemp[0] = 19.1
+		#self.MonthlyTemp[1] = 20.0
+		#self.MonthlyTemp[2] = 21.2
+		#self.MonthlyTemp[3] = 22.9
+		#self.MonthlyTemp[4] = 22.5
+		#self.MonthlyTemp[5] = 29.0  #29.0
+		#self.MonthlyTemp[6] = 22.0 #29.8
+		#self.MonthlyTemp[7] = 22.0 #30.3
+		#self.MonthlyTemp[8] = 22.0 #29.6
+		#self.MonthlyTemp[9] = 22.0 #27.0
+		#self.MonthlyTemp[10] = 22.5
+		#self.MonthlyTemp[11] = 19.3
+	
 	def feamale_mortality_rate(self,T):
 		a=0.8692
 		a1=-0.159
@@ -89,7 +100,7 @@ class model:
 		a5=-0.000003017
 		a6=0.00000005153
 		a7=-0.000000000342
-		R=a + a1 * Temp + a2 * Temp*Temp + a3*Temp*Temp*Temp + a4*Temp*Temp*Temp*Temp
+		R=a + a1 * Temp + a2 * Temp*Temp + a3*Temp*Temp*Temp + a4*Temp*Temp*Temp*Temp + a5*Temp*Temp*Temp*Temp*Temp + a6*Temp*Temp*Temp*Temp*Temp*Temp + a7*Temp*Temp*Temp*Temp*Temp*Temp*Temp
 		return R
 		
 	def R(self):
@@ -116,8 +127,8 @@ class model:
 			p1 = (-B - sqrt(-D))/(2.0*A)
 		return p1
 		
-	def Dm0_qs(self,FisicalTime):
-		T = 28.0
+	def Dm0_qs(self,FisicalTime,delta):
+		T = delta
 		modB = self.return_model_list(self.calendar_temperature(FisicalTime - T))
 		modF = self.return_model_list(self.calendar_temperature(FisicalTime))
 		MF = ((modF['k']*modF['w'])/modF['epsilon'])*(modF['R']-1.0)/modF['R']
@@ -135,8 +146,14 @@ class model:
 		return DP
 		
 	def p1_qs(self):
-		return self.p1_qs_h(self.Dm0_qs(self.Time),self.Dp0_qs(self.Time))
+		#return self.p1_qs_h(self.Dm0_qs(self.Time),self.Dp0_qs(self.Time))
+		#A = -(self.phi/self.epsilon)*self.Dm0_qs(self.Time)*(1.0-self.p0_qs()) - self.Dp0_qs(self.Time)
+		#B = (self.phi/(self.C*self.epsilon))*(self.epsilon*self.m0_qs() - self.Dm0_qs(self.Time)) + (self.pi + self.w)
+		A = - self.Dp0_qs(self.Time)/((self.phi*self.m0_qs()/self.C) + (self.pi + self.w))
+		return A
 		
 	def m1_qs(self):
-		m1 = self.p1_qs() - self.Dm0_qs(self.Time)/self.epsilon
+		#m1 = self.p1_qs() - self.Dm0_qs(self.Time)/self.epsilon
+		m1 = -self.Dm0_qs(self.Time)/self.epsilon
 		return m1
+		
