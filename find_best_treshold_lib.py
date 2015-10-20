@@ -10,18 +10,30 @@ def model_alerts(region,data,delta,c,tauVar):
 	mosquitoPopulation = mosquitos(region,data)
 	weeklyCases = data.cases[region][1:]
 	alerts = []
+	filtered_alerts = []
 	for t in range(len(mosquitoPopulation)):
 		stdev = backward_local_std(weeklyCases,t,tauVar)[1]
 		if(is_alert_triggered(mosquitoPopulation,t,delta,c,stdev)):
 			alerts.append(t)
-	return np.array(alerts)
+	for i in range(len(alerts)-1,0,-1):
+		if(alerts[i]!=(alerts[i-1]+1)):
+			filtered_alerts.append(alerts[i])
+	if(len(alerts)>0):
+		filtered_alerts.append(alerts[0])	
+	return np.array(filtered_alerts[::-1])
 	
 def outbreaks(cases,delta,e,tauVar):
 	outbreaksList = []
+	filteredOutbreakList = []
 	for t in range(len(cases)):
 		if(is_outbreak(cases,t,delta,e,tauVar)):
 			outbreaksList.append(t)
-	return np.array(outbreaksList)
+	for i in range(len(outbreaksList)-1,0,-1):
+		if(outbreaksList[i]!=(outbreaksList[i-1]+1)):
+			filteredOutbreakList.append(outbreaksList[i])
+	if(len(outbreaksList)>0):		
+		filteredOutbreakList.append(outbreaksList[0])
+	return np.array(filteredOutbreakList[::-1])
 	
 def backward_local_std(cases,t,tauVar):
 	if(t<tauVar):
@@ -100,7 +112,10 @@ def is_outbreak(incidence,t,delta,e,tauVar):
 	pastIncidence = resume[0]
 	pastSTD = resume[1]
 	futureIncidence = forward_local_mean(incidence,t,tauVar)
-	if(futureIncidence > (pastIncidence + e*pastSTD)):
+	if(futureIncidence > ((1.0 + e.mean)*pastIncidence + e.var*pastSTD)):
+		#print "mean future incidence : %f at t=%d" % (futureIncidence, t)
+		#print "pastIncidence : %f at t=%d " % (pastIncidence, t)
+		#print "pastSTD = %f , e=%f" % (pastSTD , e)
 		return True
 	else:
 		return False

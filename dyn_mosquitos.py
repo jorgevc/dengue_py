@@ -48,7 +48,7 @@ C = 1.0
 pi = 0.12
 
 #Fig 1
-region = 25 #2
+region = 30 #2
 mod = mos.model(k,w,epsilon,phi,pi,C)
 modh = mos.model(k,w,epsilon,phi,pi,C)
 modl = mos.model(k,w,epsilon,phi,pi,C)
@@ -100,9 +100,9 @@ ax2.plot(calendar,cases,'go')
 ax2.set_ylabel('cases per 1000 people')
 
 plt.xlim([0, 53])
-fig1.suptitle(data.population[region][0], fontsize=20)
-#fig1.show()
-fig1.savefig('fig6.pdf', bbox_inches='tight')
+#fig1.suptitle(data.population[region][0], fontsize=20)
+fig1.show()
+#fig1.savefig('fig6.pdf', bbox_inches='tight')
 ## Plot Temperature
 fig1, ax1 = plt.subplots()
 
@@ -118,15 +118,15 @@ ax2.plot(calendar,cases,'go')
 ax2.set_ylabel('cases per 1000 people')
 
 plt.xlim([0, 53])
-fig1.suptitle(data.population[region][0], fontsize=20)
-#fig1.show()
-fig1.savefig('fig6temp.pdf', bbox_inches='tight')
+#fig1.suptitle(data.population[region][0], fontsize=20)
+fig1.show()
+#fig1.savefig('fig6temp.pdf', bbox_inches='tight')
 #plt.subplot(2,2,1)
 #plt.plot(m,'y--', cases,'g--',ml,'b--',mh,'r--')
 #plt.plot(m_cum,'r--', cum_cases/200.0,'g--')
 #plt.axis([100, T, 0, 3])	
 #FIg 2 ##############################################################
-region = 12 #24 #7 #4
+region = 31 #12 #24 #7 #4
 mod = mos.model(k,w,epsilon,phi,pi,C)
 modh = mos.model(k,w,epsilon,phi,pi,C)
 modl = mos.model(k,w,epsilon,phi,pi,C)
@@ -169,9 +169,9 @@ ax2.plot(calendar,cases,'go')
 ax2.set_ylabel('cases per 10000 people')
 
 plt.xlim([0, 53])
-fig2.suptitle(data.population[region][0], fontsize=20)
-#fig2.show()
-fig2.savefig('fig2.pdf', bbox_inches='tight')
+#fig2.suptitle(data.population[region][0], fontsize=20)
+fig2.show()
+#fig2.savefig('fig2.pdf', bbox_inches='tight')
 ## Plot Temperature
 fig2, ax1 = plt.subplots()
 
@@ -187,7 +187,7 @@ ax2.plot(calendar,cases,'go')
 ax2.set_ylabel('cases per 10000 people')
 
 plt.xlim([0, 53])
-fig2.suptitle(data.population[region][0], fontsize=20)
+#fig2.suptitle(data.population[region][0], fontsize=20)
 #fig2.show()
 fig2.savefig('fig2temp.pdf', bbox_inches='tight')
 
@@ -195,9 +195,10 @@ fig2.savefig('fig2temp.pdf', bbox_inches='tight')
 #plt.subplot(2,2,2)
 #plt.plot(m,'y--', cases,'g--',ml,'b--',mh,'r--')
 #plt.plot(cum_cases,'g--',m_cum,'b--')
+input()
 ################################################################
 #Fig 3 ##############################################################
-region = 24 #25 #5
+region = 32 #24 #25 #5
 mod = mos.model(k,w,epsilon,phi,pi,C)
 modh = mos.model(k,w,epsilon,phi,pi,C)
 modl = mos.model(k,w,epsilon,phi,pi,C)
@@ -241,9 +242,9 @@ ax2.plot(calendar,cases,'go')
 ax2.set_ylabel('cases per 10000 people')
 
 plt.xlim([0, 53])
-fig3.suptitle(data.population[region][0], fontsize=20)
-#fig3.show()
-fig3.savefig('fig3.pdf', bbox_inches='tight')
+#fig3.suptitle(data.population[region][0], fontsize=20)
+fig3.show()
+#fig3.savefig('fig3.pdf', bbox_inches='tight')
 ## Plot Temperature
 fig3, ax1 = plt.subplots()
 
@@ -259,16 +260,16 @@ ax2.plot(calendar,cases,'go')
 ax2.set_ylabel('cases per 10000 people')
 
 plt.xlim([0, 53])
-fig3.suptitle(data.population[region][0], fontsize=20)
-#fig3.show()
-fig3.savefig('fig3temp.pdf', bbox_inches='tight')
+#fig3.suptitle(data.population[region][0], fontsize=20)
+fig3.show()
+#fig3.savefig('fig3temp.pdf', bbox_inches='tight')
 
 #plt.subplot(2,2,3)
 #plt.plot(m,'y--', cases,'g--',ml,'b--',mh,'r--')
 #plt.plot(cum_cases,'g--',m_cum,'b--')
 ################################################################
 #Fig 4##############################################################
-region = 7 #29 #6
+region = 33 #7 #29 #6
 mod = mos.model(k,w,epsilon,phi,pi,C)
 modh = mos.model(k,w,epsilon,phi,pi,C)
 modl = mos.model(k,w,epsilon,phi,pi,C)
@@ -312,9 +313,9 @@ ax2.plot(calendar,cases,'go')
 ax2.set_ylabel('cases per 10000 people')
 
 plt.xlim([0, 53])
-fig4.suptitle(data.population[region][0], fontsize=20)
-#fig4.show()
-fig4.savefig('fig4.pdf', bbox_inches='tight')
+#fig4.suptitle(data.population[region][0], fontsize=20)
+fig4.show()
+#fig4.savefig('fig4.pdf', bbox_inches='tight')
 ## Plot Temperature
 fig4, ax1 = plt.subplots()
 
@@ -330,16 +331,16 @@ ax2.plot(calendar,cases,'go')
 ax2.set_ylabel('cases per 10000 people')
 
 plt.xlim([0, 53])
-fig4.suptitle(data.population[region][0], fontsize=20)
-#fig4.show()
-fig4.savefig('fig4temp.pdf', bbox_inches='tight')
+#fig4.suptitle(data.population[region][0], fontsize=20)
+fig4.show()
+#fig4.savefig('fig4temp.pdf', bbox_inches='tight')
 
 #plt.subplot(2,2,4)
 #plt.plot(m,'y--', cases,'g--',ml,'b--',mh,'r--')
 #plt.plot(cum_cases,'g--',m_cum,'b--')
 ################################################################
 #FIg 5 ##############################################################
-region = 4 #24 #7 #4
+region = 24 #7 #4
 mod = mos.model(k,w,epsilon,phi,pi,C)
 modh = mos.model(k,w,epsilon,phi,pi,C)
 modl = mos.model(k,w,epsilon,phi,pi,C)
@@ -382,9 +383,9 @@ ax2.plot(calendar,cases,'go')
 ax2.set_ylabel('cases per 10000 people')
 
 plt.xlim([0, 53])
-fig5.suptitle(data.population[region][0], fontsize=20)
-#fig5.show()
-fig5.savefig('fig5.pdf', bbox_inches='tight')
+#fig5.suptitle(data.population[region][0], fontsize=20)
+fig5.show()
+#fig5.savefig('fig5.pdf', bbox_inches='tight')
 #exit()
 #plt.subplot(2,2,2)
 #plt.plot(m,'y--', cases,'g--',ml,'b--',mh,'r--')
@@ -406,6 +407,7 @@ ax2.plot(calendar,cases,'go')
 ax2.set_ylabel('cases per 10000 people')
 
 plt.xlim([0, 53])
-fig5.suptitle(data.population[region][0], fontsize=20)
-#fig5.show()
-fig5.savefig('fig5temp.pdf', bbox_inches='tight')
+#fig5.suptitle(data.population[region][0], fontsize=20)
+fig5.show()
+input()
+#fig5.savefig('fig5temp.pdf', bbox_inches='tight')

@@ -64,61 +64,77 @@ def create_region_hits(env):
 def picklable(creation,env,region):
 	return creation(env)(region)
 	
+def insertSQL(db,table,row):
+		import sqlite3 as sql
+		con = sql.connect(db)
+		with con:
+			cur = con.cursor()
+			cur.execute("INSERT INTO " + table + " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", row)
+	
 if __name__ == '__main__':
 	env1 = Bunch(data = dpl.data("DATOS"))
-	env1.delta = 4 # time lag between two mesoures to compare the increment in mosquitos and incidence  (to stablish treshold)
-	env1.c = 1.96 # number of variances (incidence variance) to stablish warnning treshold
-	env1.tauVar = 4 # period of time to calculate local variance and mean of incidence
-	env1.e = 1.96 # number of variances (incidence variance) to declare outbreak
-
-		###
-	env1.dtau = 3 # interval of time of possible outbreak predicted by the early warnning
-	env1.tau = 8 # anticipation of the early warnning system
-
+	env1.e = Bunch(var = 1.0)
+	env1.e.mean = 1
+	pool = mp.Pool(processes=8)
+	# env1.delta = 4 # time lag between two mesoures to compare the increment in mosquitos and incidence  (to stablish treshold)
+	#env1.c = 1.96 # number of variances (incidence variance) to stablish warnning treshold
+	#env1.tauVar = 4 # period of time to calculate local variance and mean of incidence
+	#env1.e = 1.96 # number of variances (incidence variance) to declare outbreak
+	#env1.dtau = 3 # interval of time tolerance of possible outbreak predicted by the early warnning
+	#env1.tau = 8 # anticipation of the early warnning system
+	
 	MEC = 1.0 
 	FPC = 2.0
-
-	cumOutbreaks = 0
-	cumAlerts = 0
-	cumHits = 0
-
-	pool = mp.Pool(processes=4)
-
-	#region_hits = create_region_hits(env1)
-	
-
-	doing = [pool.apply_async(picklable,args=(create_region_hits,env1,region,)) for region in range(32)]
-	#local_results = np.array(pool.map(picklable, range(32)))
-	#local_results = np.array(map(region_hits,range(32)))
-	local_results = np.array([p.get() for p in doing])
-	t_local_results = local_results.transpose()
-	print local_results
-
-	results = [np.sum(t_local_results[n]) for n in range(len(local_results[0]))] 
-	
-	cumOutbreaks = cumOutbreaks + results[1]
-	cumAlerts = cumAlerts + results[2]
-	cumHits = cumHits + results[0]
-
-	if(cumOutbreaks != 0):
-		efficiency = float(cumHits)/float(cumOutbreaks)
-	else:
-		efficiency = -1.0
-		print "no good outbreak treshold"
-
-	if(cumAlerts != 0):
-		falseFraction = float(cumAlerts - cumHits)/float(cumAlerts)
-	else:
-		falseFraction = -1.0
-		print "no good trigger treshold"
+	bestEfficiency = 0.0
+	lessAsymetricCost = 0.0
+	lessSymetricCost = 0.0
+	for env1.delta in range(7,10,1):
+		for env1.c in np.arange(0.2,0.31,0.1):
+			for env1.tauVar in range(3,6,2):
+					for env1.e.var in np.arange(1.0,2.5,0.7):
+						for env1.e.mean in np.arange(0.3,2.5,0.7):
+							for env1.dtau in range(4,7,2):
+									for env1.tau in range(4,13,2):
 		
-	AsymetricCost = MEC*(cumOutbreaks - cumHits) + FPC*(cumAlerts - cumHits)
-	SymetricCost = FPC*(cumOutbreaks + cumAlerts - 2.0*cumHits)
-
-	print efficiency
-	print falseFraction
-	print AsymetricCost
-	print SymetricCost
-	print cumHits
-	print cumOutbreaks
-	print cumAlerts
+										cumOutbreaks = 0
+										cumAlerts = 0
+										cumHits = 0
+										
+										doing = [pool.apply_async(picklable,args=(create_region_hits,env1,region,)) for region in range(32)]
+										local_results = np.array([p.get() for p in doing])
+										t_local_results = local_results.transpose()
+		
+										results = [np.sum(t_local_results[n]) for n in range(len(local_results[0]))] 
+										
+										cumOutbreaks = cumOutbreaks + results[1]
+										cumAlerts = cumAlerts + results[2]
+										cumHits = cumHits + results[0]
+		
+										if(cumOutbreaks != 0):
+											efficiency = float(cumHits)/float(cumOutbreaks)
+										else:
+											efficiency = -1.0
+											print "no good outbreak treshold"
+		
+										if(cumAlerts != 0):
+											falseFraction = float(cumAlerts - cumHits)/float(cumAlerts)
+										else:
+											falseFraction = -1.0
+											print "no good trigger treshold"
+											
+										AsymetricCost = MEC*(cumOutbreaks - cumHits) + FPC*(cumAlerts - cumHits)
+										SymetricCost = FPC*(cumOutbreaks + cumAlerts - 2.0*cumHits)
+										
+										row = [env1.delta, env1.c,env1.tauVar,env1.e.var,env1.dtau,env1.tau,MEC,FPC,efficiency,falseFraction,AsymetricCost,SymetricCost,int(cumHits),int(cumOutbreaks),int(cumAlerts),env1.e.mean]
+										insertSQL('dengue_results.db','find_best_treshold_mean',row)
+				
+										if(efficiency > bestEfficiency ):
+											bestEfficiencyRow = list(row)
+										if(AsymetricCost < lessAsymetricCost):
+											lessAsymetricCostRow = list(row)
+										if(SymetricCost < lessSymetricCost):
+											lessSymetricCostRow = list(row)
+			
+	insertSQL('dengue_results.db','best_treshold',bestEfficiencyRow)
+	insertSQL('dengue_results.db','best_treshold',lessAsymetricCostRow)
+	insertSQL('dengue_results.db','best_treshold',lessSymetricCostRow)
