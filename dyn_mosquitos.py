@@ -56,6 +56,7 @@ data = dpl.data("DATOS")
 mod.set_monthly_temperature(data.temp_med[region][1:])
 modh.set_monthly_temperature(data.temp_max[region][1:])
 modl.set_monthly_temperature(data.temp_min[region][1:])
+precipitationArray = data.weekly_precipitation_array(region)
 print "region %s" % data.temp_min[region][0]
 print "poblacion de %s" % data.population[region][0]
 
@@ -64,6 +65,8 @@ for i in range(1,int(T)):
 	mod.set_model_calendar(i*dt)
 	modh.set_model_calendar(i*dt)
 	modl.set_model_calendar(i*dt)
+	
+	
 	m0_qs[i-1] = mod.m0_qs()
 	m1_qs[i-1] = -mod.Dm0_qs((i-1)*dt,28)/mod.epsilon
 	m[i] = m[i-1] + (mod.k*mod.w*p[i-1] - mod.epsilon*m[i-1])*dt
@@ -109,8 +112,8 @@ fig1, ax1 = plt.subplots()
 ax1.set_xlabel('time (weeks)')
 ax1.set_ylabel('temperature (C)')
 ax1.plot(range(0,53),np.array(data.weekly_temperature_array(region,'min')),'b')
-ax1.plot(range(0,53),np.array(data.weekly_temperature_array(region,'max')),'r')
-ax1.plot(range(0,53),np.array(data.weekly_temperature_array(region,'med')),'y')
+ax1.plot(range(0,53),np.array(data.weekly_precipitation_array(region)),'r')
+#ax1.plot(range(0,53),np.array(data.weekly_temperature_array(region,'med')),'y')
 
 ax2 = ax1.twinx()
 ax2.plot(calendar,cases,'go')
@@ -178,7 +181,7 @@ fig2, ax1 = plt.subplots()
 ax1.set_xlabel('time (weeks)')
 ax1.set_ylabel('temperature (C)')
 ax1.plot(range(0,53),np.array(data.weekly_temperature_array(region,'min')),'b')
-ax1.plot(range(0,53),np.array(data.weekly_temperature_array(region,'max')),'r')
+ax1.plot(range(0,53),np.array(data.weekly_precipitation_array(region)),'r')
 ax1.plot(range(0,53),np.array(data.weekly_temperature_array(region,'med')),'y')
 
 ax2 = ax1.twinx()
@@ -189,16 +192,16 @@ ax2.set_ylabel('cases per 10000 people')
 plt.xlim([0, 53])
 #fig2.suptitle(data.population[region][0], fontsize=20)
 #fig2.show()
-fig2.savefig('fig2temp.pdf', bbox_inches='tight')
+#fig2.savefig('fig2temp.pdf', bbox_inches='tight')
 
 #exit()
 #plt.subplot(2,2,2)
 #plt.plot(m,'y--', cases,'g--',ml,'b--',mh,'r--')
 #plt.plot(cum_cases,'g--',m_cum,'b--')
-input()
+#input()
 ################################################################
 #Fig 3 ##############################################################
-region = 32 #24 #25 #5
+region = 31 #24 #25 #5
 mod = mos.model(k,w,epsilon,phi,pi,C)
 modh = mos.model(k,w,epsilon,phi,pi,C)
 modl = mos.model(k,w,epsilon,phi,pi,C)
@@ -251,7 +254,7 @@ fig3, ax1 = plt.subplots()
 ax1.set_xlabel('time (weeks)')
 ax1.set_ylabel('temperature (C)')
 ax1.plot(range(0,53),np.array(data.weekly_temperature_array(region,'min')),'b')
-ax1.plot(range(0,53),np.array(data.weekly_temperature_array(region,'max')),'r')
+ax1.plot(range(0,53),np.array(data.weekly_precipitation_array(region)),'r')
 ax1.plot(range(0,53),np.array(data.weekly_temperature_array(region,'med')),'y')
 
 ax2 = ax1.twinx()
@@ -322,7 +325,7 @@ fig4, ax1 = plt.subplots()
 ax1.set_xlabel('time (weeks)')
 ax1.set_ylabel('temperature (C)')
 ax1.plot(range(0,53),np.array(data.weekly_temperature_array(region,'min')),'b')
-ax1.plot(range(0,53),np.array(data.weekly_temperature_array(region,'max')),'r')
+ax1.plot(range(0,53),np.array(data.weekly_precipitation_array(region)),'r')
 ax1.plot(range(0,53),np.array(data.weekly_temperature_array(region,'med')),'y')
 
 ax2 = ax1.twinx()
@@ -398,7 +401,7 @@ fig5, ax1 = plt.subplots()
 ax1.set_xlabel('time (weeks)')
 ax1.set_ylabel('temperature (C)')
 ax1.plot(range(0,53),np.array(data.weekly_temperature_array(region,'min')),'b')
-ax1.plot(range(0,53),np.array(data.weekly_temperature_array(region,'max')),'r')
+ax1.plot(range(0,53),np.array(data.weekly_precipitation_array(region)),'r')
 ax1.plot(range(0,53),np.array(data.weekly_temperature_array(region,'med')),'y')
 
 ax2 = ax1.twinx()
@@ -411,3 +414,4 @@ plt.xlim([0, 53])
 fig5.show()
 input()
 #fig5.savefig('fig5temp.pdf', bbox_inches='tight')
+

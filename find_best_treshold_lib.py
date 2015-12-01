@@ -1,13 +1,28 @@
 import numpy as np
 
+#def is_alert_triggered(m,t,delta,c,stdev):
+#	if((m[t]-m[t-delta])>c*stdev):
+#		return True
+#	else:
+#		return False
+
 def is_alert_triggered(m,t,delta,c,stdev):
-	if((m[t]-m[t-delta])>c*stdev):
+	resume = backward_local_std(m,t-delta,10) # fijo tauVar = 10
+	pastIncidence = resume[0]
+	pastSTD = resume[1]
+	futureIncidence = forward_local_mean(m,t,10) # tambien fijo tauVar = 10
+	if(futureIncidence > ((1.0 + c.mean)*pastIncidence + c.var*stdev)):
+		#print "mean future incidence : %f at t=%d" % (futureIncidence, t)
+		#print "pastIncidence : %f at t=%d " % (pastIncidence, t)
+		#print "pastSTD = %f , e=%f" % (pastSTD , e)
 		return True
 	else:
 		return False
+	
 		
 def model_alerts(region,data,delta,c,tauVar):
-	mosquitoPopulation = mosquitos(region,data)
+	#mosquitoPopulation = mosquitos(region,data)
+	mosquitoPopulation = mosquitos_diapause(region,data)
 	weeklyCases = data.cases[region][1:]
 	alerts = []
 	filtered_alerts = []
@@ -93,6 +108,204 @@ def mosquitos(region,data):
 	for i in range(1,int(T)):
 		#Set the time steep temperature
 		mod.set_model_calendar(i*dt) 
+		# Obtain the actual model prediction
+		m[i] = m[i-1] + (mod.k*mod.w*p[i-1] - mod.epsilon*m[i-1])*dt
+		p[i] = p[i-1] + (mod.phi*m[i-1]*(1.0-p[i-1]/mod.C)-(mod.pi + mod.w)*p[i-1])*dt
+		
+	return weekly_mosquitos(m)
+	
+def mosquitos_diapause(region,data):
+	import mosquitos_lib as mos
+	
+	def weekly_mosquitos(m):
+		weeklym = np.zeros(53)
+		for week in range(53):
+			weeklym[week]=m[(week*7.0+3.5)*1.0/dt]
+		return weeklym
+	
+	#dummy initial parameter values
+	k = 0.5
+	w = 0.05
+	epsilon = 0.14*1.05042
+	phi = 1.0
+	C = 1.0
+	pi = 0.12
+	DiapauseFactor = 0.05
+
+	#initializing the model for low temperature
+	mod = mos.model(k,w,epsilon,phi,pi,C)
+
+	#binding temperature data arrays to models
+	print "region %s" % data.temp_min[region][0]
+	mod.set_monthly_temperature(data.temp_min[region][1:])
+	precipitationArray = data.weekly_precipitation_array(region)
+	meanPrecipitation = np.mean(precipitationArray)
+	
+	# time units are in days
+	dt = 0.01 # time steep (0.01 of a day)
+	T = (53)*7*1.0/dt # how many time steeps as function of number of days (weeks*days)
+	burnning =  (20)*7*1.0/dt # burnning time
+	#burnning evolution
+	mBurn = 0.5
+	pBurn = 0.3
+	dBurn = 0.0
+	for i in range(int(T - burnning) ,int(T)):
+		#Set the time steep temperature
+		mod.set_model_calendar(i*dt)
+		#Set carring capacity
+		mod.C = 1.0 + 0.3*((precipitationArray[int(i*dt/7.0)]/meanPrecipitation) - 1.0)
+		week = int(i*dt/7.0)
+		if(week > 0):
+			DotH = (precipitationArray[week] - precipitationArray[week -1])
+		else:
+			DotH = (precipitationArray[week] - precipitationArray[week +1])
+		if (DotH > 0):
+			Diapause = DiapauseFactor*(dBurn/mod.C)*DotH
+		else:
+			Diapause = DiapauseFactor*(pBurn/mod.C)*DotH
+		# Obtain the actual model prediction
+		mBurn = mBurn + (mod.k*mod.w*pBurn - mod.epsilon*mBurn)*dt
+		pBurn = pBurn + (mod.phi*mBurn*(1.0-pBurn/mod.C)-(mod.pi + mod.w)*pBurn)*dt + Diapause*dt
+		dBurn = dBurn - Diapause*dt
+		
+	#initial conditions
+		#defining the numpy needed arrays
+	m = np.zeros(T)
+	p = np.zeros(T)
+	d = np.zeros(T)
+	m[0] = mBurn
+	p[0] = pBurn
+	d[0] = dBurn
+	
+	for i in range(1,int(T)):
+		#Set the time steep temperature
+		mod.set_model_calendar(i*dt)
+		#Set carring capacity
+		mod.C = 1.0 + 0.3*((precipitationArray[int(i*dt/7.0)]/meanPrecipitation) - 1.0)
+		week = int(i*dt/7.0)
+		DotH = (precipitationArray[week] - precipitationArray[week -1])
+		if (DotH > 0):
+			Diapause = DiapauseFactor*(d[i-1]/mod.C)*DotH
+		else:
+			Diapause = DiapauseFactor*(p[i-1]/mod.C)*DotH
+		# Obtain the actual model prediction
+		m[i] = m[i-1] + (mod.k*mod.w*p[i-1] - mod.epsilon*m[i-1])*dt
+		p[i] = p[i-1] + (mod.phi*m[i-1]*(1.0-p[i-1]/mod.C)-(mod.pi + mod.w)*p[i-1])*dt + Diapause*dt
+		d[i] = d[i-1] - Diapause*dt
+		
+	return weekly_mosquitos(m)
+
+def mosquitos_precipitation(region,data):
+	import mosquitos_lib as mos
+	
+	def weekly_mosquitos(m):
+		weeklym = np.zeros(53)
+		for week in range(53):
+			weeklym[week]=m[(week*7.0+3.5)*1.0/dt]
+		return weeklym
+	
+	#dummy initial parameter values
+	k = 0.5
+	w = 0.05
+	epsilon = 0.14*1.05042
+	phi = 1.0
+	C = 1.0
+	pi = 0.12
+
+	#initializing the model for low temperature
+	mod = mos.model(k,w,epsilon,phi,pi,C)
+
+	#binding temperature data arrays to models
+	print "region %s" % data.temp_min[region][0]
+	mod.set_monthly_temperature(data.temp_min[region][1:])
+	precipitationArray = data.weekly_precipitation_array(region)
+	meanPrecipitation = np.mean(precipitationArray)
+	
+	# time units are in days
+	dt = 0.01 # time steep (0.01 of a day)
+	T = (53)*7*1.0/dt # how many time steeps as function of number of days (weeks*days)
+	burnning =  (20)*7*1.0/dt # burnning time
+	#burnning evolution
+	mBurn = 0.5
+	pBurn = 0.3
+	for i in range(int(T - burnning) ,int(T)):
+		#Set the time steep temperature
+		mod.set_model_calendar(i*dt)
+		#Set carring capacity
+		mod.C = 1.0 + 0.3*((precipitationArray[int(i*dt/7.0)]/meanPrecipitation) - 1.0)
+		# Obtain the actual model prediction
+		mBurn = mBurn + (mod.k*mod.w*pBurn - mod.epsilon*mBurn)*dt
+		pBurn = pBurn + (mod.phi*mBurn*(1.0-pBurn/mod.C)-(mod.pi + mod.w)*pBurn)*dt
+		
+	#initial conditions
+		#defining the numpy needed arrays
+	m = np.zeros(T)
+	p = np.zeros(T)
+	m[0] = mBurn
+	p[0] = pBurn
+	
+	for i in range(1,int(T)):
+		#Set the time steep temperature
+		mod.set_model_calendar(i*dt)
+		#Set carring capacity
+		mod.C = 1.0 + 0.3*((precipitationArray[int(i*dt/7.0)]/meanPrecipitation) - 1.0)
+		# Obtain the actual model prediction
+		m[i] = m[i-1] + (mod.k*mod.w*p[i-1] - mod.epsilon*m[i-1])*dt
+		p[i] = p[i-1] + (mod.phi*m[i-1]*(1.0-p[i-1]/mod.C)-(mod.pi + mod.w)*p[i-1])*dt
+		
+	return weekly_mosquitos(m)
+
+def mosquitos_precipitation_sinTemp(region,data):
+	import mosquitos_lib as mos
+	
+	def weekly_mosquitos(m):
+		weeklym = np.zeros(53)
+		for week in range(53):
+			weeklym[week]=m[(week*7.0+3.5)*1.0/dt]
+		return weeklym
+	
+	#dummy initial parameter values
+	k = 0.5
+	w = 0.05
+	epsilon = 0.14*1.05042
+	phi = 1.0
+	C = 1.0
+	pi = 0.12
+
+	#initializing the model for low temperature
+	mod = mos.model(k,w,epsilon,phi,pi,C)
+
+	#binding temperature data arrays to models
+	print "region %s" % data.temp_min[region][0]
+	mod.set_monthly_temperature(data.temp_min[region][1:])
+	mod.set_model_temperature(np.mean(data.temp_min[region][1:]))
+	precipitationArray = data.weekly_precipitation_array(region)
+	meanPrecipitation = np.mean(precipitationArray)
+	
+	# time units are in days
+	dt = 0.01 # time steep (0.01 of a day)
+	T = (53)*7*1.0/dt # how many time steeps as function of number of days (weeks*days)
+	burnning =  (20)*7*1.0/dt # burnning time
+	#burnning evolution
+	mBurn = 0.5
+	pBurn = 0.3
+	for i in range(int(T - burnning) ,int(T)):
+		#Set carring capacity
+		mod.C = 1.0 + 0.3*((precipitationArray[int(i*dt/7.0)]/meanPrecipitation) - 1.0)
+		# Obtain the actual model prediction
+		mBurn = mBurn + (mod.k*mod.w*pBurn - mod.epsilon*mBurn)*dt
+		pBurn = pBurn + (mod.phi*mBurn*(1.0-pBurn/mod.C)-(mod.pi + mod.w)*pBurn)*dt
+		
+	#initial conditions
+		#defining the numpy needed arrays
+	m = np.zeros(T)
+	p = np.zeros(T)
+	m[0] = mBurn
+	p[0] = pBurn
+	
+	for i in range(1,int(T)):
+		#Set carring capacity
+		mod.C = 1.0 + 0.3*((precipitationArray[int(i*dt/7.0)]/meanPrecipitation) - 1.0)
 		# Obtain the actual model prediction
 		m[i] = m[i-1] + (mod.k*mod.w*p[i-1] - mod.epsilon*m[i-1])*dt
 		p[i] = p[i-1] + (mod.phi*m[i-1]*(1.0-p[i-1]/mod.C)-(mod.pi + mod.w)*p[i-1])*dt

@@ -21,9 +21,12 @@ def shift_alerts(alerts,tau):
 	shiftAlerts = np.zeros(len(alerts))
 	for i in range(len(alerts)):
 		if((alerts[i]+tau)>=weeks):
-			shiftAlerts[i]=alerts[i]+tau - weeks
+			shiftAlerts[i]=(alerts[i] + tau - weeks)
 		else:
-			shiftAlerts[i]=alerts[i]+tau
+			if((alerts[i] + tau)<0):
+				shiftAlerts[i]=(alerts[i] + tau + weeks)
+			else:
+				shiftAlerts[i]=alerts[i]+tau
 	return shiftAlerts
 
 def count_hits(tau,dtau,alerts,outbreaks):	
@@ -35,16 +38,26 @@ def count_hits(tau,dtau,alerts,outbreaks):
 			newHits = outbreaks[mask]
 			negMask = np.logical_not(mask)
 			leftAlerts = alerts[np.logical_not(np.in1d(alerts,newHits))]
-			return count_hits_helper(dtau -1, shift_alerts(leftAlerts,1), outbreaks[negMask],np.append(hits,newHits))
+			return count_hits_helper(dtau -1, shift_alerts(leftAlerts,1), outbreaks[negMask],np.append(hits,newHits)) #se comento a partir de la entrada 1008 de la base de datos
+			#return count_hits_helper(dtau-1,shift_alerts(alerts,1),outbreaks,np.append(hits,newHits)) #se descomento a partir de 1584 # pruebas a partir de 2160# teoria a partir de 3021
 
-	offsetAlerts = shift_alerts(alerts,tau)
+	offsetAlerts = shift_alerts(alerts,tau - dtau/2)
 	return count_hits_helper(dtau,offsetAlerts,outbreaks,np.array([]))
 
 def create_region_hits(env):
 	def region_hits_function(region):
 		alerts = fbt.model_alerts(region,data,delta,c,tauVar)
 		outbreaks = fbt.outbreaks(data.cases[region][1:],delta,e,tauVar)
-		numHits = len(count_hits(tau,dtau,alerts,outbreaks)[0])
+		hits = count_hits(tau,dtau,alerts,outbreaks)[0]
+		numHits = len(hits)
+		#print "----------------------------"
+		#print "Alerts :" 
+		#print alerts
+		#print "Outbreaks:"
+		#print outbreaks
+		#print "Hits:"
+		#print hits
+		#print "-----------------------"
 		return np.array([numHits,len(outbreaks),len(alerts)])
 	
 	#time units are in weeks
@@ -69,12 +82,14 @@ def insertSQL(db,table,row):
 		con = sql.connect(db)
 		with con:
 			cur = con.cursor()
-			cur.execute("INSERT INTO " + table + " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", row)
+			cur.execute("INSERT INTO " + table + " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", row)
 	
 if __name__ == '__main__':
 	env1 = Bunch(data = dpl.data("DATOS"))
 	env1.e = Bunch(var = 1.0)
-	env1.e.mean = 1
+	env1.e.mean = 1.0
+	env1.c = Bunch(mean = 1.0)
+	env1.c.var = 1.0
 	pool = mp.Pool(processes=8)
 	# env1.delta = 4 # time lag between two mesoures to compare the increment in mosquitos and incidence  (to stablish treshold)
 	#env1.c = 1.96 # number of variances (incidence variance) to stablish warnning treshold
@@ -88,13 +103,15 @@ if __name__ == '__main__':
 	bestEfficiency = 0.0
 	lessAsymetricCost = 0.0
 	lessSymetricCost = 0.0
-	for env1.delta in range(7,10,1):
-		for env1.c in np.arange(0.2,0.31,0.1):
-			for env1.tauVar in range(3,6,2):
-					for env1.e.var in np.arange(1.0,2.5,0.7):
-						for env1.e.mean in np.arange(0.3,2.5,0.7):
-							for env1.dtau in range(4,7,2):
-									for env1.tau in range(4,13,2):
+	for env1.delta in range(1,2,1):
+		#for env1.c.mean in np.arange(0.3,3.6,0.5):
+			for env1.c.var in np.arange(0.0,0.1,0.01):
+				for env1.tauVar in range(10,11,1):
+					for env1.e.var in np.arange(2.5,3.5,0.2):
+						for env1.e.mean in np.arange(2.1,3.10,0.2):
+							env1.c.mean = env1.e.mean
+							for env1.dtau in range(50,51,2):
+									for env1.tau in range(0,1):
 		
 										cumOutbreaks = 0
 										cumAlerts = 0
@@ -125,8 +142,8 @@ if __name__ == '__main__':
 										AsymetricCost = MEC*(cumOutbreaks - cumHits) + FPC*(cumAlerts - cumHits)
 										SymetricCost = FPC*(cumOutbreaks + cumAlerts - 2.0*cumHits)
 										
-										row = [env1.delta, env1.c,env1.tauVar,env1.e.var,env1.dtau,env1.tau,MEC,FPC,efficiency,falseFraction,AsymetricCost,SymetricCost,int(cumHits),int(cumOutbreaks),int(cumAlerts),env1.e.mean]
-										insertSQL('dengue_results.db','find_best_treshold_mean',row)
+										row = [env1.delta, env1.c.var,env1.tauVar,env1.e.var,env1.dtau,env1.tau,MEC,FPC,efficiency,falseFraction,AsymetricCost,SymetricCost,int(cumHits),int(cumOutbreaks),int(cumAlerts),env1.e.mean,env1.c.mean]
+										insertSQL('dengue_results.db','find_best_treshold_mean_mean_diapause',row)
 				
 										if(efficiency > bestEfficiency ):
 											bestEfficiencyRow = list(row)
@@ -135,6 +152,6 @@ if __name__ == '__main__':
 										if(SymetricCost < lessSymetricCost):
 											lessSymetricCostRow = list(row)
 			
-	insertSQL('dengue_results.db','best_treshold',bestEfficiencyRow)
-	insertSQL('dengue_results.db','best_treshold',lessAsymetricCostRow)
-	insertSQL('dengue_results.db','best_treshold',lessSymetricCostRow)
+	#insertSQL('dengue_results.db','best_treshold',bestEfficiencyRow)
+	#insertSQL('dengue_results.db','best_treshold',lessAsymetricCostRow)
+	#insertSQL('dengue_results.db','best_treshold',lessSymetricCostRow)
