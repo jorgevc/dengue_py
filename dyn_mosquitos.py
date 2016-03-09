@@ -4,14 +4,16 @@ import mosquitos_lib as mos
 import datos_plot_lib as dpl
 import matplotlib
 
+#set bigger labels and title
 matplotlib.rc('xtick', labelsize=18) 
 matplotlib.rc('ytick', labelsize=18)
 matplotlib.rc('axes', labelsize=18)
 #plt.rcParams.update({'axes.labelsize': 'large'})
 #50*50
-dt = 0.01
-T = 430.0*1.0/dt
+dt = 0.01	# set the time steep for the simulations
+T = 430.0*1.0/dt	# calculate the number of steeps in the simulation
 
+# create the arrays used to store the state of the simulation
 m = np.zeros(T)
 p = np.zeros(T)
 mh = np.zeros(T)
@@ -29,55 +31,54 @@ m_cum = np.zeros(T)
 calendar = np.zeros(T)
 xaxis = np.zeros(T)
 
-#for region in range(0,31):
+#initial conditions
 m[0] = 0.5
 p[0] = 0.3
 mh[0] = 0.5
 ph[0] = 0.3
 ml[0] = 0.5
 pl[0] = 0.3
-
 cum_cases[0] = 0.0
 m_cum[0]= 0.0
 
-k = 0.5
-w = 0.05
-epsilon = 0.14*1.05042
-phi = 1.0
-C = 1.0
-pi = 0.12
+#parameter values
+k = 0.5		# fraction of feamale mosquitos
+w = 0.05	# transition rate between acuatic phase to mature phase
+epsilon = 0.14*1.05042 # dead rate of adult mosquitoes
+phi = 1.0	# oviposition rate
+C = 1.0		# Carrying capacity of the hatcheries
+pi = 0.12	# dead rate of the inmature stage
 
-#Fig 1
-region = 30 #2
-mod = mos.model(k,w,epsilon,phi,pi,C)
-modh = mos.model(k,w,epsilon,phi,pi,C)
-modl = mos.model(k,w,epsilon,phi,pi,C)
-data = dpl.data("DATOS")
-mod.set_monthly_temperature(data.temp_med[region][1:])
-modh.set_monthly_temperature(data.temp_max[region][1:])
-modl.set_monthly_temperature(data.temp_min[region][1:])
-precipitationArray = data.weekly_precipitation_array(region)
+#Generation of Fig 1 
+region = 30 #index of the region (row of the data file)
+mod = mos.model(k,w,epsilon,phi,pi,C)	# create a model in the variable mod (to be used with medium temp)
+modh = mos.model(k,w,epsilon,phi,pi,C)	# create a model in the variable modh (to be used with high temperature)
+modl = mos.model(k,w,epsilon,phi,pi,C)	# create a model in the variable modl (to be used with low temerature)
+data = dpl.data("DATOS")	# create data object to use the data in the program (read data from file)
+mod.set_monthly_temperature(data.temp_med[region][1:]) #bind medium average temperature to mod model
+modh.set_monthly_temperature(data.temp_max[region][1:])	#bind high average temperature to modh model
+modl.set_monthly_temperature(data.temp_min[region][1:])	#bind low average temperature to modl model
+precipitationArray = data.weekly_precipitation_array(region) #intrapolate precipation in a weakly time steep for the region
 print "region %s" % data.temp_min[region][0]
 print "poblacion de %s" % data.population[region][0]
 
-
+#The Loop of the symulation: Euler method
 for i in range(1,int(T)):
-	mod.set_model_calendar(i*dt)
+	mod.set_model_calendar(i*dt)	#set the entomological parameters according to th temperature of the date in weaks of the year
 	modh.set_model_calendar(i*dt)
 	modl.set_model_calendar(i*dt)
 	
-	
-	m0_qs[i-1] = mod.m0_qs()
-	m1_qs[i-1] = -mod.Dm0_qs((i-1)*dt,28)/mod.epsilon
-	m[i] = m[i-1] + (mod.k*mod.w*p[i-1] - mod.epsilon*m[i-1])*dt
+	m0_qs[i-1] = mod.m0_qs()	#quasiestacionary approximation at this time
+	m1_qs[i-1] = -mod.Dm0_qs((i-1)*dt,28)/mod.epsilon	#quasiestacionary approximation at this time
+	m[i] = m[i-1] + (mod.k*mod.w*p[i-1] - mod.epsilon*m[i-1])*dt	#Steep of Euler method
 	p[i] = p[i-1] + (mod.phi*m[i-1]*(1.0-p[i-1]/mod.C)-(mod.pi + mod.w)*p[i-1])*dt
 	mh[i] = mh[i-1] + (modh.k*modh.w*ph[i-1] - modh.epsilon*mh[i-1])*dt
 	ph[i] = ph[i-1] + (modh.phi*mh[i-1]*(1.0-ph[i-1]/modh.C)-(modh.pi + modh.w)*ph[i-1])*dt
 	ml[i] = ml[i-1] + (modl.k*modl.w*pl[i-1] - modl.epsilon*ml[i-1])*dt
 	pl[i] = pl[i-1] + (modl.phi*ml[i-1]*(1.0-pl[i-1]/modl.C)-(modl.pi + modl.w)*pl[i-1])*dt
-	if(mh[i] <= 0.01 and ph[i] <= 0.01):
+	if(mh[i] <= 0.01 and ph[i] <= 0.01):	#simulating diapause mechanism
 		mh[i]=0.01
-		
+	#Calculate cumulative cases and Incidence of the Dengue
 	week=int((i)*dt/7)
 	calendar[i]=week
 	xaxis[i]=float(i)*dt/7.0
@@ -89,7 +90,7 @@ for i in range(1,int(T)):
 		mh[i]=0.01
 		ph[i]=0.01
 
-###Ploting
+###Ploting the resoults
 fig1, ax1 = plt.subplots()
 
 ax1.plot(xaxis,m,'y--',xaxis,ml,'b--',xaxis,mh,'r--')
