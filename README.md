@@ -17,6 +17,8 @@ python ./correlation.py
 The correlation between incidence and mosquito population with different time lags will also be generated.
 The maximal correlation and time lag will be displayed
 
+The main functions to build a custom symulation are in the library "find_best_treshold_lib.py" 
+described below
 ------------------------------
 Important Files and functions
 ------------------------------
@@ -28,6 +30,27 @@ Library with utility functions of the model. The parameters of the model are sto
 
 -find_best_treshold_lib.py:
 Library with utility functions to test different values of parameters in recurrent way.
+Main functions:
+    mosquitos(region,data): -> weekly_population
+      region: int index of the region
+      data: data object
+      weekly_mosquitos: array of weakly mosquito population 
+      Return the mosquito population with varing temperature 
+    mosquitos_diapause(region,data):
+      region: int index of the region
+      data: data object
+      weekly_mosquitos: array of weakly mosquito population 
+      Return the mosquito population with varing temperature, precipitation and diapause
+    mosquitos_precipitation(region,data):
+      region: int index of the region
+      data: data object
+      weekly_mosquitos: array of weakly mosquito population 
+      Return the mosquito population with varing temperature and precipitation
+    mosquitos_precipitation_sinTemp(region,data):
+      region: int index of the region
+      data: data object
+      weekly_mosquitos: array of weakly mosquito population 
+      Return the mosquito population with varing temperature
 
 ---------
 Licence
